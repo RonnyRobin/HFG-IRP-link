@@ -99,11 +99,11 @@ button:focus-visible{outline:3px solid #00857C77;outline-offset:2px}
   <main id="main" inert>
     <div class="field">
       <label for="group">그룹사</label>
-      <div class="sel"><select id="group"><option value="">그룹사를 선택하세요</option></select></div>
+      <div class="sel"><select id="group" autocomplete="off"><option value="">그룹사를 선택하세요</option></select></div>
     </div>
     <div class="field">
       <label for="dept">부서</label>
-      <div class="sel"><select id="dept" disabled><option value="">먼저 그룹사를 선택하세요</option></select></div>
+      <div class="sel"><select id="dept" disabled autocomplete="off"><option value="">먼저 그룹사를 선택하세요</option></select></div>
     </div>
 
     <div class="actions">
@@ -169,7 +169,6 @@ const MSG = `♥ 하나은행 개인형IRP 안내 ♥
 ▶ 온라인 가입시간은 09:00~18:00이고
 이 외 시간 신규 가입은 예약 신규로 진행되요
 ▶ 개인형IRP 모바일 가입 매뉴얼 : https://url.kr/7t7d1o`;
-const KEY = "hana-irp-sel";
 const $ = id => document.getElementById(id);
 const layer=$("layer"), agree=$("agree"), closeBtn=$("close"), main=$("main"), group=$("group"), dept=$("dept"), shareBtn=$("share"), status=$("status"), manual=$("manual");
 const OK_ICON = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="8" cy="8" r="7"/><path d="M4.8 8.2l2.3 2.3 4-4.4"/></svg>';
@@ -227,15 +226,11 @@ shareBtn.addEventListener("click", () => {
   });
 });
 
-group.addEventListener("change", () => { fillDepts(); render(); save(); });
-dept.addEventListener("change", () => { render(); save(); });
+group.addEventListener("change", () => { fillDepts(); render(); });
+dept.addEventListener("change", () => { render(); });
 
-function save(){ try{ localStorage.setItem(KEY, JSON.stringify({ g: group.value, d: dept.value })); }catch{} }
-// 지난 선택 복원 (동의 팝업은 매번 표시)
-try{
-  const v = JSON.parse(localStorage.getItem(KEY) || "{}");
-  if(DATA[v.g]){ group.value = v.g; fillDepts(); if(DATA[v.g].depts[v.d]) dept.value = v.d; }
-}catch{}
+// 접속할 때마다 처음 상태로: 뒤로가기 복원(bfcache)도 새로 불러옴
+addEventListener("pageshow", e => { if(e.persisted) location.reload(); });
 render();
 </script>
 </body>
