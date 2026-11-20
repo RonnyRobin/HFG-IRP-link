@@ -69,11 +69,6 @@ main{flex:1;padding:0 20px 32px;margin-top:28px}
 .check input{width:22px;height:22px;accent-color:var(--green);margin:0;flex:none}
 .close{height:44px;padding:0 20px;border-radius:10px;background:var(--green);color:#fff;font-size:15px;font-weight:700;flex:none}
 .close:disabled{background:#B9C9C7;cursor:not-allowed}
-.notice{margin:auto;border:0;border-radius:16px;padding:24px 20px 20px;width:calc(100% - 40px);max-width:390px;color:var(--ink);text-align:center;box-shadow:0 10px 30px rgba(22,48,46,.18)}
-.notice::backdrop{background:rgba(242,246,245,.5);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
-.notice svg{width:40px;height:40px;color:var(--red)}
-.notice p{margin:10px 0 20px;font-size:16px;line-height:1.5;font-weight:700}
-.notice button{width:100%;height:48px;border-radius:10px;background:var(--green);color:#fff;font-size:16px;font-weight:700}
 .manual{margin-top:16px;padding:16px;border-radius:12px;background:var(--white);border:1.5px solid var(--red);font-size:14px;line-height:1.6;white-space:pre-line;word-break:break-all;user-select:all;-webkit-user-select:all}
 
 .actions{margin-top:20px}
@@ -81,10 +76,6 @@ button{font:inherit;cursor:pointer;border:0}
 .go{width:100%;height:56px;border-radius:12px;background:var(--green);color:#fff;font-size:17px;font-weight:700;transition:background .15s}
 .go:hover{background:var(--green-deep)}
 .go:disabled{background:#B9C9C7;cursor:not-allowed}
-.go+.go{margin-top:10px}
-.go.alt{background:var(--green-deep)}
-.go.alt:hover{background:#00544E}
-.go.alt:disabled{background:#B9C9C7}
 button:focus-visible{outline:3px solid #00857C77;outline-offset:2px}
 .status{display:flex;align-items:flex-start;gap:6px;margin-top:12px;font-size:14px;line-height:1.5;font-weight:600;color:var(--green);min-height:21px}
 .status svg{width:16px;height:16px;flex:none;margin-top:2px}
@@ -118,18 +109,11 @@ button:focus-visible{outline:3px solid #00857C77;outline-offset:2px}
     </div>
 
     <div class="actions">
-      <button class="go" data-kind="new" disabled>신규IRP가입하기 공유</button>
-      <button class="go alt" data-kind="transfer" disabled>연금 가져오기 공유</button>
+      <button class="go" id="share" disabled>신규IRP가입 및 연금가져오기 공유</button>
       <p class="status" id="status" role="status" aria-live="polite"></p>
       <p class="manual" id="manual" hidden></p>
     </div>
   </main>
-
-  <dialog class="notice" id="notice" aria-labelledby="noticeText">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3 2 20h20L12 3z" stroke-linejoin="round"/><path d="M12 10v4M12 17v.5" stroke-linecap="round"/></svg>
-    <p id="noticeText">연금 가져오기는 11/18일부터 가능합니다.</p>
-    <form method="dialog"><button>확인</button></form>
-  </dialog>
 
   <div class="layer" id="layer">
     <section class="consent" role="dialog" aria-modal="true" aria-labelledby="consentTitle">
@@ -148,7 +132,7 @@ button:focus-visible{outline:3px solid #00857C77;outline-offset:2px}
 </div>
 
 <script>
-// 링크 = 버튼별 BASE + 부서 코드(그룹사 영문 1자 + 부서 2자리, 예: A01)
+// 링크 = BASE + 부서 코드(그룹사 영문 1자 + 부서 2자리, 예: A01)
 const BASE = {
   new: "https://oqf.hanabank.com/oqf/oneqfirst.jsp?screenId=RTPF0101001001&hgpNo=",
   transfer: "https://oqf.hanabank.com/oqf/oneqfirst.jsp?screenId=RTPB0501001001&hgpNo="
@@ -171,31 +155,32 @@ const DATA = {
   "하나벤처스": {"depts": {"경영기획본부": "O01", "투자본부": "O02", "기타본부": "O03"}},
   "하나손해보험": {"depts": {"GA영업본부": "P01", "ICT지원본부": "P02", "경영지원본부": "P03", "보상서비스본부": "P04", "자동차보험본부": "P05", "장기보험본부": "P06", "전략영업본부": "P07", "기타본부": "P08"}}
 };
-// 안내 문구: {link} 자리에 해당 버튼의 부서 링크가 들어감. 문구는 여기만 고치면 됨
-// 연금 가져오기 오픈 스위치: 11/18 오픈 시 true로 바꾸면 바로 공유됨 (기능·문구는 그대로 유지)
-const TRANSFER_OPEN = true;
-const MSG = {};
-MSG.new = `♥ 하나은행 개인형IRP 안내 ♥
-안녕하세요?
+// 안내 문구: {link1}=신규IRP가입, {link2}=연금가져오기 링크(부서 코드 포함). 문구는 여기만 고치면 됨
+const MSG = `♥ 하나은행 개인형IRP 안내 ♥
 세금은 줄이고, 노후는 단단하게
-하나은행 개인형 IRP를 소개합니다.
--최대 가입한도 : 연 1,800만원
--최대 세액공제 : 16.5%
+3년 연속 우수사업자 하나은행 개인형IRP를 소개합니다.
 
-소득 있는 누구나 연말정산 때 세금 돌려받아요.
-자세한 내용과 가입은 아래 링크에서 가능해요!
+☆은행권 3년 연속('23년, '24년, '25년) 고용노동부주관 퇴직연금 사업자평가 우수사업자 선정 하나은행에서 관리가 중요한 퇴직연금, 하나은행에서 제대로 관리해 보세요.
 
-▼▼ 혜택 확인하고 신청하기
-{link}
+- 최대 가입한도 : 연 1,800만원
+- 최대 세액공제 : 16.5%
 
+소득 있는 누구나 연말정산 때 세금 돌려받아요. 자세한 내용을 아래 링크에서 확인하세요!
+
+▼▼ [개인형IRP가입] 혜택 확인하고 신청하기
+{link1}
+
+※ 온라인 가입시간은 09:00~18:00이고 이 외 시간 신규 가입은 예약 신규로 진행되요
 ※ 가입과정 중 '관리영업점 및 직원 등록'항목에는 거래하시거나 관리를 받기를 원하시는 하나은행 영업점(직원은 선택사항)을 선택하여 주세요.
+하나은행 계좌를 출금계좌로 지정하시는 경우에는 필수로 입력하지 않으셔도 신규 가능합니다.
 
-신규과정에서 하나은행 계좌를 출금계좌로 지정하시는 경우에는 필수로 입력하지 않으셔도 신규 가능합니다.
+▼▼ [연금가져오기] 혜택 확인하고 신청하기
+{link2}
 
-[사전에 확인해주세요]
-▶ 온라인 가입시간은 09:00~18:00이고
-이 외 시간 신규 가입은 예약 신규로 진행되요
+※ 가져오기 중 '권유직원 및 영업점 입력'항목에는 거래하시거나 관리받기를 원하시는 영업점 또는 직원을 선택하세요.(선택사항)
 
+[유의사항]
+※ 하나원큐는 하나은행의 대표 스마트폰뱅킹 브랜드
 ※ 가입 전 설명청취/상품설명서, 약관 필독
 ※ 금융소비자는 상품에 대하여 설명받을 권리있음
 ※ 이 퇴직연금은 예금자보호법에 따라 예금보호 대상 금융상품으로 운용되는 적립금에 대하여 다른 보호상품과는 별도로 1인당 “1억원까지”(운용되는 금융상품 판매회사별 보호상품 합산) 보호됩니다.
@@ -205,32 +190,10 @@ MSG.new = `♥ 하나은행 개인형IRP 안내 ♥
 ※ 과세기준 및 과세 방법은 향후 변동가능
 ※ 세액공제 전 결정세액이 세액공제액보다 작은 경우 최대 환급액을 받지 못할 수 있음
 ※ 기타 자세한 사항은 하나은행 홈페이지(https://www.kebhana.com), 하나원큐 앱 참조 혹은 퇴직연금 전용 고객센터(1599-2080) 또는 가까운 영업점으로 문의`;
-MSG.transfer = `♡하나은행 개인형IRP 이전안내♡
-
-안녕하세요? 하나은행입니다.
-IRP 실물이전은 3년 연속 우수사업자 하나은행으로!
-
-☆은행권 3년 연속('23년, '24년, '25년) 고용노동부주관 퇴직연금 사업자평가 우수사업자 선정 흩어져 있는 내 연금 가지고 있던 상품 그대로 이전해 하나로 관리해 보세요.
-관리가 중요한 퇴직연금, 하나은행에서 제대로 관리해 보세요.
-
-▼▼ 혜택 확인하고 신청하기
-{link}
-
-※ 가져오기 중 '권유직원 및 영업점 입력'항목에는 거래하시거나 관리받기를 원하시는 영업점 또는 직원을 선택하세요. (선택사항)
-
-[유의사항]
-※하나원큐는 하나은행의 대표 스마트폰뱅킹 브랜드
-※가입전 설명청취/상품설명서,약관 필독
-※금융소비자는 상품에 대하여 설명받을 권리있음
-※이 퇴직연금은 예금자보호법에 따라 예금보호 대상 금융상품으로 운용되는 적립금에 대하여 다른 보호상품과는 별도로 1인당 “1억원까지”(운용되는 금융상품 판매회사별 보호상품 합산) 보호됩니다.
-※연금외 수령시 세액공제 받은 납입원금 및 수익에 대해 기타소득세(16.5% 부과)
-※수수료는 후취 연 최소0%~최대0.45%(단, 개인형IRP 비대면계좌의 계약응당일 전일자 평가금액이 5천만원 이상인 경우, 해당 적립금 중 사용자부담금(퇴직금)의 운용관리수수료 및 자산관리 수수료는 면제. 단, 펀드 보수 등 별도 발생 가능)
-※과세기준 및 과세 방법은 향후 변동가능
-※기타 자세한 사항은 하나은행 홈페이지(https://www.kebhana.com), 하나원큐 앱 참조 혹은 퇴직연금 전용 고객센터(1599-2080) 또는 가까운 영업점으로 문의`;
 const $ = id => document.getElementById(id);
 const layer=$("layer"), agree=$("agree"), closeBtn=$("close"), main=$("main"), group=$("group"), dept=$("dept"), status=$("status"), manual=$("manual");
 const OK_ICON = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="8" cy="8" r="7"/><path d="M4.8 8.2l2.3 2.3 4-4.4"/></svg>';
-const shareBtns = document.querySelectorAll("[data-kind]");
+const shareBtn = $("share");
 let code = "";
 
 Object.keys(DATA).forEach(g => group.add(new Option(g, g)));
@@ -250,7 +213,7 @@ function render(){
   group.classList.toggle("filled", !!group.value);
   dept.classList.toggle("filled", !!dept.value);
   code = group.value && dept.value ? DATA[group.value].depts[dept.value] : "";
-  shareBtns.forEach(b => b.disabled = !code);
+  shareBtn.disabled = !code;
   status.textContent = ""; manual.hidden = true;
 }
 function setStatus(ok, text){ status.className = "status" + (ok ? "" : " fail"); status.innerHTML = (ok ? OK_ICON : "") + text; }
@@ -267,11 +230,9 @@ function copyText(text){
   return navigator.clipboard ? navigator.clipboard.writeText(text).then(() => true, () => false) : Promise.resolve(false);
 }
 
-shareBtns.forEach(btn => btn.addEventListener("click", () => {
+shareBtn.addEventListener("click", () => {
   if(!code) return;
-  const k = btn.dataset.kind;
-  if(k === "transfer" && !TRANSFER_OPEN){ status.textContent = ""; manual.hidden = true; $("notice").showModal(); return; }
-  const text = MSG[k].replace("{link}", BASE[k] + code);
+  const text = MSG.replace("{link1}", BASE.new + code).replace("{link2}", BASE.transfer + code);
   const copied = copyText(text);
   // 공유 창은 탭 직후 바로 호출해야 막히지 않음 (await 이후 호출 금지)
   const shared = navigator.share ? navigator.share({ text }).then(() => "done", e => e.name === "AbortError" ? "cancel" : "fail") : Promise.resolve("none");
@@ -284,7 +245,7 @@ shareBtns.forEach(btn => btn.addEventListener("click", () => {
       setStatus(false, "자동 복사가 안 되는 환경이에요. 아래 메시지를 길게 눌러 복사해 보내 주세요.");
     }
   });
-}));
+});
 
 group.addEventListener("change", () => { fillDepts(); render(); });
 dept.addEventListener("change", () => { render(); });
